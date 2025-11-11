@@ -53,7 +53,7 @@ Recomenda-se organizar os arquivos da seguinte forma para maior clareza:
 
 ### Fluxo 1: Análise de Mercado (Dados Reais)
 
-Este é o fluxo principal para analisar sua própria carteira (ex: S\&P 500).
+Este é o fluxo principal para analisar sua própria carteira.
 
 **Passo 1:** Forneça seus preços brutos em `precos_fechamento_3_anos.csv`.
 
@@ -201,5 +201,3 @@ python "Scripts de Otimização/menu_otimizacao_ampl.py"
 ```
 
   * **O que esperar:** O script iniciará a Análise de Sensibilidade, mostrando o log do Gurobi para cada execução e, ao final, exibirá o gráfico da Fronteira Eficiente para seus dados.
-
-(Fim do `README.md`)
