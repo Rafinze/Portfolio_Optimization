@@ -1,78 +1,81 @@
-# Otimização de Portfólio (MIQP) com Restrições de Cardinalidade
 
-> Um pipeline completo em Python para otimização de carteiras de investimento, desde a limpeza de dados brutos até a validação do modelo (MIQP) contra benchmarks da literatura usando `amplpy` e `Gurobi`.
+````markdown
+# Otimização de Portfólio (MIQP) com Restrições de Cardinalidade e Setoriais
 
-Este projeto implementa um modelo avançado de otimização de portfólio que estende a Teoria Moderna de Markowitz para incluir restrições do mundo real, como **limite de cardinalidade (`m`)** e **peso máximo por ativo (`W_max`)**.
+Este repositório contém um pipeline completo em Python para otimização de carteiras de investimento, implementando restrições do mundo real (cardinalidade, limites de alocação e regras setoriais) através de um modelo de **Programa Quadrático Inteiro-Misto (MIQP)**.
 
-Isso transforma o problema clássico de Programa Quadrático (QP) em um **Programa Quadrático Inteiro-Misto (MIQP)**, que é resolvido usando a linguagem de modelagem AMPL e o solver Gurobi.
+O projeto utiliza a linguagem de modelagem `amplpy` e o solver `Gurobi` para encontrar a fronteira eficiente de portfólios, indo desde a limpeza e preparação de dados brutos até a validação formal do modelo contra benchmarks acadêmicos.
 
-O repositório está dividido em dois fluxos de trabalho principais:
 
-1.  **Análise de Mercado (Dados Reais):** Um pipeline para carregar seus próprios dados de preços, limpá-los, calcular parâmetros (`mu`, `Sigma`) e rodar a análise de Fronteira Eficiente com regras setoriais complexas.
-2.  **Validação Acadêmica (Benchmark):** Um script auto-contido que valida a corretude do modelo matemático contra os dados clássicos da OR-Library (`port1`, `portef1`).
 
------
+---
 
 ## 🛠️ Ferramentas e Metodologia
 
-  * **Linguagem:** Python 3.x
-  * **Modelagem:** `amplpy` (Python API para AMPL)
-  * **Solver:** Gurobi Optimizer (via AMPL)
-  * **Análise de Dados:** `pandas` e `numpy`
-  * **Visualização:** `matplotlib` e `seaborn`
-  * **Aquisição de Dados:** `requests` (para benchmarks), `yfinance` (para setores)
+* **Linguagem:** Python 3.x
+* **Análise de Dados:** `pandas`, `numpy`
+* **Aquisição de Dados:** `requests`, `yfinance`, `lxml`
+* **Modelagem:** `amplpy` (Python API para AMPL)
+* **Solver:** Gurobi Optimizer
+* **Visualização:** `matplotlib`, `seaborn`
+* **Metodologia:** O problema é formulado como um MIQP (Mixed-Integer Quadratic Program) para minimizar a variância da carteira (risco) sujeito a um retorno alvo (`R_target`) e um conjunto de restrições de cardinalidade (`m`), alocação (`W_min`, `W_max`) e regras lógicas de negócio (setoriais). O solver Gurobi utiliza um algoritmo **Branch-and-Cut** para encontrar a solução ótima.
 
------
+---
 
 ## 📂 Estrutura do Projeto e Fluxo de Trabalho
 
-Recomenda-se organizar os arquivos da seguinte forma para maior clareza:
+O projeto é dividido em dois fluxos de trabalho principais, cada um com seus próprios scripts.
 
-```
-/Portfolio_Optimization
-|
-|--- /Scripts de Preparação
-|    |--- Limpa dados.py
-|    |--- gerar_classificacao.py
-|
-|--- /Scripts de Otimização
-|    |--- menu_otimizacao_ampl.py
-|    |--- benchmark.py
-|
-|--- /Dados de Entrada (Exemplos)
-|    |--- precos_fechamento_3_anos.csv
-|
-|--- /Dados Processados (Saída)
-|    |--- vetor_retornos_calculado.csv
-|    |--- matriz_covariancia_calculada.csv
-|    |--- mapeamento_setores.csv
-|
-|--- README.md
-|--- requirements.txt
-```
+### Fluxo 1: Análise de Mercado (Dados do Mundo Real)
 
-### Fluxo 1: Análise de Mercado (Dados Reais)
+Este é o fluxo principal para analisar dados de mercado (ex: S&P 500) com regras de negócio complexas.
 
-Este é o fluxo principal para analisar sua própria carteira.
+**Arquivos Envolvidos:**
+* `Limpa dados.py` (Script de Preparação)
+* `gerar_classificacao.py` (Script de Preparação)
+* `menu_otimizacao_ampl.py` (Script Principal de Análise)
+* `precos_fechamento_3_anos.csv` (Dados Brutos de Entrada)
+* `vetor_retornos_calculado.csv` (Dados Processados de Saída)
+* `matriz_covariancia_calculada.csv` (Dados Processados de Saída)
+* `mapeamento_setores.csv` (Dados Processados de Saída)
 
-**Passo 1:** Forneça seus preços brutos em `precos_fechamento_3_anos.csv`.
+**Passos para Execução:**
 
-**Passo 2:** Execute os scripts de preparação:
+1.  **Fornecer Dados Brutos:** Adicione seu arquivo de preços de fechamento diários (ex: `precos_fechamento_3_anos.csv`) ao repositório.
+2.  **Preparar Dados de Classificação:**
+    ```bash
+    # Busca os setores de mercado (ex: S&P 500 da Wikipedia) e salva 'mapeamento_setores.csv'
+    python gerar_classificacao.py
+    ```
+3.  **Preparar Dados Financeiros:**
+    ```bash
+    # Lê 'precos_fechamento_3_anos.csv', calcula mu e Sigma, e salva os arquivos CSV processados
+    python "Limpa dados.py"
+    ```
+4.  **Executar Análise Principal:**
+    ```bash
+    # Consome os 3 arquivos CSV gerados e executa a análise da Fronteira Eficiente
+    python menu_otimizacao_ampl.py
+    ```
 
-  * `python "Scripts de Preparação/Limpa dados.py"`: Lê os preços brutos, calcula os retornos diários, anualiza `mu` e `Sigma`, e salva `vetor_retornos_calculado.csv` e `matriz_covariancia_calculada.csv`.
-  * `python "Scripts de Preparação/gerar_classificacao.py"`: Lê uma lista de tickers (provavelmente do arquivo de preços) e busca seus setores de mercado (via `yfinance`), salvando em `mapeamento_setores.csv`.
-
-**Passo 3:** Execute o script de otimização principal:
-
-  * `python "Scripts de Otimização/menu_otimizacao_ampl.py"`: Este script consome os 3 arquivos gerados no Passo 2 e roda a análise completa da Fronteira Eficiente, com todas as regras setoriais.
+---
 
 ### Fluxo 2: Validação Acadêmica (Benchmark)
 
-Este fluxo é usado para provar que o modelo matemático central (a função objetivo) está correto.
+Este fluxo é usado para **validar a corretude** do modelo matemático central contra os benchmarks clássicos da literatura (OR-Library de Beasley).
 
-**Passo Único:** Execute o script de benchmark:
+**Arquivos Envolvidos:**
+* `benchmark.py` (Script de Validação)
 
-  * `python "Scripts de Otimização/benchmark.py"`: Este script é **auto-contido**. Ele ignora todos os arquivos CSV locais, baixa os dados (`port1`) e o gabarito (`portef1`) da web, anualiza ambos e plota um gráfico comparando os resultados do seu modelo com o gabarito da literatura.
+**Passo Único para Execução:**
+Este script é **auto-contido**. Ele ignora todos os arquivos CSV locais.
+
+```bash
+# Baixa os dados 'port1', 'portef1' e 'portc1' da web,
+# executa o modelo com e sem restrições, e plota um gráfico
+# de validação comparando seus resultados com o gabarito.
+python benchmark.py
+````
 
 -----
 
@@ -83,13 +86,13 @@ Este fluxo é usado para provar que o modelo matemático central (a função obj
   * **`Limpa dados.py`**:
 
       * **Entrada:** `precos_fechamento_3_anos.csv`
-      * **O que faz:** Calcula os retornos diários (`.pct_change()`), anualiza o retorno médio (`.mean() * 252`) e a matriz de covariância (`.cov() * 252`).
+      * **O que faz:** Lê os preços brutos, calcula os retornos diários (`.pct_change()`), anualiza o retorno médio (`.mean() * 252`) e a matriz de covariância (`.cov() * 252`).
       * **Saída:** `vetor_retornos_calculado.csv` (`mu`) e `matriz_covariancia_calculada.csv` (`Sigma`).
 
   * **`gerar_classificacao.py`**:
 
-      * **Entrada:** (Provavelmente `precos_fechamento_3_anos.csv` para a lista de tickers).
-      * **O que faz:** Itera sobre os tickers, usa a biblioteca `yfinance` para buscar o setor GICS de cada um.
+      * **Entrada:** Nenhuma (busca dados da web - S\&P 500 da Wikipedia).
+      * **O que faz:** Raspa a web para obter a lista de tickers do S\&P 500 e sua classificação setorial (GICS).
       * **Saída:** `mapeamento_setores.csv`.
 
 ### Scripts de Otimização
@@ -97,26 +100,21 @@ Este fluxo é usado para provar que o modelo matemático central (a função obj
   * **`menu_otimizacao_ampl.py`**:
 
       * **Entrada:** `vetor_retornos_calculado.csv`, `matriz_covariancia_calculada.csv`, `mapeamento_setores.csv`.
-      * **O que faz:** Script principal para análise de mercado. Carrega os dados, aplica o modelo MIQP completo (incluindo regras de setores) e executa a "Análise de Sensibilidade" (mapeamento da Fronteira Eficiente), variando `R_target` e `W_max`.
+      * **O que faz:** Script principal para análise de mercado. Carrega os dados processados, aplica o modelo MIQP completo (incluindo regras de setores como `Min_Diversificacao_Defensivo`, `Limite_Exposicao_Juros`, etc.) e executa uma **Análise de Sensibilidade** (mapeamento da Fronteira Eficiente), variando `R_target` e `W_max`.
       * **Saída:** Gráficos da Fronteira Eficiente e tabelas no console com as carteiras de maior Índice de Sharpe.
 
   * **`benchmark.py`**:
 
       * **Entrada:** Nenhuma (baixa dados da web).
-      * **O que faz:** Valida o modelo-base. Roda uma versão simplificada do modelo (sem setores) com restrições "desligadas" (`m = N`, `W_max = 1.0`) e compara o resultado com o gabarito acadêmico (`portef1`).
-      * **Saída:** Um gráfico de validação. Se os pontos do seu modelo (vermelhos) se sobrepõem aos do gabarito (azuis), o modelo está correto.
+      * **O que faz:** Valida o modelo-base. Roda uma versão simplificada do modelo (sem setores) com e sem as restrições de cardinalidade (`m`) e aporte mínimo (`W_min`) e compara os resultados com os gabaritos acadêmicos (`portef1` e `portc1`).
+      * **Saída:** Salva os gráficos de validação (ex: `validacao_benchmark_port1.png`) em uma pasta (ex: `Graficos_Benchmark`).
 
-### Arquivos de Dados
+### Arquivos de Dados (`.csv`)
 
-  * **`/Dados de Entrada`**:
-
-      * `precos_fechamento_3_anos.csv`: **(Necessário fornecer)** Arquivo CSV com preços de fechamento diários. As colunas devem ser os tickers.
-
-  * **`/Dados Processados`**:
-
-      * `vetor_retornos_calculado.csv`: Saída do `Limpa dados.py`.
-      * `matriz_covariancia_calculada.csv`: Saída do `Limpa dados.py`.
-      * `mapeamento_setores.csv`: Saída do `gerar_classificacao.py`.
+  * `precos_fechamento_3_anos.csv`: **(Dado de Entrada)**. Seu arquivo de preços brutos.
+  * `vetor_retornos_calculado.csv`: **(Dado Processado)**. O vetor `mu` (retornos esperados) anualizado.
+  * `matriz_covariancia_calculada.csv`: **(Dado Processado)**. A matriz `Sigma` (covariância) anualizada.
+  * `mapeamento_setores.csv`: **(Dado Processado)**. Mapeamento de `Ticker` para `Setor`.
 
 -----
 
@@ -131,7 +129,7 @@ Este fluxo é usado para provar que o modelo matemático central (a função obj
   * Um solver de otimização, como **Gurobi** (com uma licença válida)
 
 **Bibliotecas Python:**
-(Salve isso como `requirements.txt`)
+(Crie um arquivo `requirements.txt` com este conteúdo)
 
 ```
 pandas
@@ -144,7 +142,7 @@ lxml
 yfinance
 ```
 
-Instale com:
+E instale com:
 
 ```bash
 pip install -r requirements.txt
@@ -152,11 +150,18 @@ pip install -r requirements.txt
 
 ### 2\. Configuração do AMPL/Gurobi
 
-Em **ambos** os scripts (`benchmark.py` e `menu_otimizacao_ampl.py`), encontre o bloco `if __name__ == '__main__':` e ajuste o `caminho_ampl` para apontar para a **pasta** onde seu `ampl.exe` está instalado.
+Este é o passo mais crítico. O script Python precisa saber onde encontrar os executáveis do AMPL.
 
-```python
+1.  Em **ambos** os scripts (`benchmark.py` e `menu_otimizacao_ampl.py`), encontre o bloco `if __name__ == '__main__':`.
+
+2.  Localize a linha `caminho_ampl = "..."` e **substitua o caminho** pelo diretório exato onde o seu `ampl.exe` está instalado.
+
+    **Exemplo de alteração:**
+
+    ```python
+    # Bloco 'try...except' para encontrar o AMPL
     try:
-        ampl_env = Environment() # Tenta o PATH
+        ampl_env = Environment() # Tenta encontrar no PATH do sistema
     except Exception:
         try:
             # --- EDITE ESTA LINHA ---
@@ -165,7 +170,7 @@ Em **ambos** os scripts (`benchmark.py` e `menu_otimizacao_ampl.py`), encontre o
         except Exception as e:
             print(f"ERRO CRÍTICO: Não foi possível encontrar os executáveis do AMPL.")
             exit()
-```
+    ```
 
 ### 3\. Passo a Passo da Execução
 
@@ -174,30 +179,37 @@ Em **ambos** os scripts (`benchmark.py` e `menu_otimizacao_ampl.py`), encontre o
 Primeiro, confirme que seu ambiente e seu modelo-base estão corretos.
 
 ```bash
-python "Scripts de Otimização/benchmark.py"
+python benchmark.py
 ```
 
-  * **O que esperar:** Um gráfico comparando seu modelo com o gabarito. Os pontos vermelhos e azuis devem se sobrepor perfeitamente.
+  * **O que esperar:** O script irá baixar os 5 benchmarks, rodar a validação completa (pode levar vários minutos) e salvar 5 gráficos de validação na pasta `Graficos_Benchmark`. Verifique se os pontos vermelhos e verdes se sobrepõem nos gráficos.
 
 #### Passo B: Preparar Dados de Mercado
 
-Forneça seu arquivo `precos_fechamento_3_anos.csv` na pasta de entrada.
+Forneça seu arquivo `precos_fechamento_3_anos.csv`.
 
 1.  **Gere `mu` e `Sigma`:**
     ```bash
-    python "Scripts de Preparação/Limpa dados.py"
+    python "Limpa dados.py"
     ```
 2.  **Gere o mapeamento de setores:**
     ```bash
-    python "Scripts de Preparação/gerar_classificacao.py"
+    python gerar_classificacao.py
     ```
 
 #### Passo C: Executar a Análise de Mercado
 
-Com os três arquivos (`vetor...`, `matriz...`, `mapeamento...`) prontos na pasta de saída, rode a análise principal.
+Com os três arquivos (`vetor...`, `matriz...`, `mapeamento...`) prontos, rode a análise principal.
 
 ```bash
-python "Scripts de Otimização/menu_otimizacao_ampl.py"
+python menu_otimizacao_ampl.py
 ```
 
-  * **O que esperar:** O script iniciará a Análise de Sensibilidade, mostrando o log do Gurobi para cada execução e, ao final, exibirá o gráfico da Fronteira Eficiente para seus dados.
+  * **O que esperar:** O script iniciará a Análise de Sensibilidade, mostrando o log do Gurobi para cada execução e, ao final, exibirá o gráfico da Fronteira Eficiente para os seus dados.
+
+<!-- end list -->
+
+```
+
+(Fim do `README.md`)
+```
