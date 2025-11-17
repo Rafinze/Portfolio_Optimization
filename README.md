@@ -1,5 +1,4 @@
 
-````markdown
 # Otimização de Portfólio (MIQP) com Restrições de Cardinalidade e Setoriais
 
 Este repositório contém um pipeline completo em Python para otimização de carteiras de investimento, implementando restrições do mundo real (cardinalidade, limites de alocação e regras setoriais) através de um modelo de **Programa Quadrático Inteiro-Misto (MIQP)**.
