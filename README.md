@@ -206,9 +206,4 @@ python menu_otimizacao_ampl.py
 
   * **O que esperar:** O script iniciará a Análise de Sensibilidade, mostrando o log do Gurobi para cada execução e, ao final, exibirá o gráfico da Fronteira Eficiente para os seus dados.
 
-<!-- end list -->
 
-```
-
-(Fim do `README.md`)
-```
